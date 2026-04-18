@@ -1,1 +1,5 @@
-__version__ = "1.0.0"
+"""
+Single source for version string.
+"""
+
+__version__ = "0.1.0"

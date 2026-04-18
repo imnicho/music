@@ -1,5 +1,5 @@
 #define MyAppName "OctaveLights"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "0.1.0"
 #define MyAppPublisher "Nicho"
 #define MyAppURL "https://github.com/nicho/octavelights"
 #define MyAppExeName "OctaveLights.exe"

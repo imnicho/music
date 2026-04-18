@@ -1,63 +1,49 @@
-import threading
-import mido
+"""MIDI input handler using mido + python-rtmidi."""
+
 from PySide6.QtCore import QObject, Signal
-from logger import logger
+import mido
+
 
 class MIDIListener(QObject):
-    """MIDI input handler for Komplete Kontrol S61."""
-
-    note_on = Signal(int)  # pitch
+    note_on = Signal(int, int)  # pitch, velocity
     note_off = Signal(int)  # pitch
 
     def __init__(self):
         super().__init__()
-        self.port = None
-        self.listening = False
-        self.thread = None
+        self.inport = None
+        self.open_port()
 
-    def start(self):
-        """Start listening for MIDI input."""
-        self.listening = True
-        self.thread = threading.Thread(target=self._listen_loop, daemon=True)
-        self.thread.start()
-
-    def stop(self):
-        """Stop listening."""
-        self.listening = False
-        if self.port:
-            self.port.close()
-        if self.thread:
-            self.thread.join(timeout=2)
-
-    def _open_port(self):
-        """Open MIDI input port for S61."""
-        try:
-            ports = mido.get_input_names()
-            for port_name in ports:
-                if 'Komplete Kontrol' in port_name:
-                    self.port = mido.open_input(port_name)
-                    logger.info(f"MIDI port opened: {port_name}")
+    def open_port(self):
+        """Open the first MIDI port matching 'Komplete Kontrol'."""
+        for port_name in mido.get_input_names():
+            if "Komplete Kontrol" in port_name:
+                try:
+                    self.inport = mido.open_input(port_name)
                     return True
-            logger.warning("Komplete Kontrol MIDI port not found")
-            return False
-        except Exception as e:
-            logger.error(f"Failed to open MIDI port: {e}")
-            return False
+                except Exception:
+                    return False
+        return False
 
-    def _listen_loop(self):
-        """Poll for MIDI messages."""
-        if not self._open_port():
+    def is_connected(self):
+        """Check if MIDI port is open."""
+        return self.inport is not None
+
+    def get_available_ports(self):
+        """List all MIDI input ports."""
+        return mido.get_input_names()
+
+    def poll(self):
+        """Poll for MIDI messages and emit signals."""
+        if not self.inport:
             return
 
-        while self.listening:
-            try:
-                for msg in self.port.iter_pending():
-                    if msg.type == 'note_on' and msg.velocity > 0:
-                        self.note_on.emit(msg.note)
-                    elif msg.type == 'note_off' or (msg.type == 'note_on' and msg.velocity == 0):
-                        self.note_off.emit(msg.note)
-            except Exception as e:
-                logger.error(f"MIDI read error: {e}")
-                break
+        for msg in self.inport.iter_pending():
+            if msg.type == "note_on":
+                self.note_on.emit(msg.note, msg.velocity)
+            elif msg.type == "note_off":
+                self.note_off.emit(msg.note)
 
-midi_listener = MIDIListener()
+    def close(self):
+        """Close MIDI port."""
+        if self.inport:
+            self.inport.close()

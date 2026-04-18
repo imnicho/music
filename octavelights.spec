@@ -44,5 +44,3 @@ exe = EXE(
     icon='assets/app.ico',
     version_file='version_info.txt',
 )
-
-coll = Collection(exe, name='OctaveLights')
