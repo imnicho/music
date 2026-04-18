@@ -1,10 +1,6 @@
 venv/
-dist/
-build/
-*.pyc
 __pycache__/
-.pytest_cache/
-logs/
-*.spec
-.env
+*.pyc
+*.log
 .DS_Store
+.env
