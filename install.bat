@@ -11,18 +11,32 @@ if not exist "venv\Scripts\python.exe" (
 "venv\Scripts\python.exe" -m pip install --upgrade pip || goto :err
 "venv\Scripts\python.exe" -m pip install mido==1.3.2 python-rtmidi==1.5.8 hid==1.0.8 || goto :err
 
-powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-  "$d='%~dp0'.TrimEnd('\'); ^
-   $target = Join-Path $d 'venv\Scripts\pythonw.exe'; ^
-   if (-not (Test-Path $target)) { $target = Join-Path $d 'venv\Scripts\python.exe' }; ^
-   $ws = New-Object -ComObject WScript.Shell; ^
-   $lnkPath = [IO.Path]::Combine([Environment]::GetFolderPath('Startup'),'OctaveLights.lnk'); ^
-   $lnk = $ws.CreateShortcut($lnkPath); ^
-   $lnk.TargetPath = $target; ^
-   $lnk.Arguments = '\"' + (Join-Path $d 'octavelights.py') + '\"'; ^
-   $lnk.WorkingDirectory = $d; ^
-   $lnk.WindowStyle = 7; ^
-   $lnk.Save()" || goto :err
+set "INSTALL_DIR=%~dp0"
+if "!INSTALL_DIR:~-1!"=="\" set "INSTALL_DIR=!INSTALL_DIR:~0,-1!"
+
+set "PS1=%TEMP%\octavelights_shortcut.ps1"
+> "!PS1!" echo param([string]$InstallDir)
+>>"!PS1!" echo $d = $InstallDir.TrimEnd('\')
+>>"!PS1!" echo $target = Join-Path $d 'venv\Scripts\pythonw.exe'
+>>"!PS1!" echo if (-not (Test-Path $target)) { $target = Join-Path $d 'venv\Scripts\python.exe' }
+>>"!PS1!" echo $ws = New-Object -ComObject WScript.Shell
+>>"!PS1!" echo $lnkPath = [IO.Path]::Combine([Environment]::GetFolderPath('Startup'),'OctaveLights.lnk')
+>>"!PS1!" echo $lnk = $ws.CreateShortcut($lnkPath)
+>>"!PS1!" echo $lnk.TargetPath = $target
+>>"!PS1!" echo $lnk.Arguments = '"' + (Join-Path $d 'octavelights.py') + '"'
+>>"!PS1!" echo $lnk.WorkingDirectory = $d
+>>"!PS1!" echo $lnk.WindowStyle = 7
+>>"!PS1!" echo $lnk.Save()
+
+powershell -NoProfile -ExecutionPolicy Bypass -File "!PS1!" -InstallDir "!INSTALL_DIR!"
+
+set "LNK=%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\OctaveLights.lnk"
+if not exist "!LNK!" (
+    echo ERROR: Startup shortcut was not created.
+    del "!PS1!" 2>nul
+    goto :err
+)
+del "!PS1!" 2>nul
 
 set "PID_FILE=%LOCALAPPDATA%\OctaveLights\octavelights.pid"
 if exist "!PID_FILE!" (
