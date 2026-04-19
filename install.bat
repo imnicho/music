@@ -9,7 +9,8 @@ if not exist "venv\Scripts\python.exe" (
 )
 
 "venv\Scripts\python.exe" -m pip install --upgrade pip || goto :err
-"venv\Scripts\python.exe" -m pip install mido==1.3.2 python-rtmidi==1.5.8 hid==1.0.8 || goto :err
+"venv\Scripts\python.exe" -m pip uninstall -y hid >nul 2>&1
+"venv\Scripts\python.exe" -m pip install mido==1.3.2 python-rtmidi==1.5.8 hidapi==0.15.0 || goto :err
 
 set "INSTALL_DIR=%~dp0"
 if "!INSTALL_DIR:~-1!"=="\" set "INSTALL_DIR=!INSTALL_DIR:~0,-1!"
